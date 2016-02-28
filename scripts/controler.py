@@ -2,7 +2,6 @@
 
 
 import rospy
-import cartographie_tl.msg
 import geometry_msgs.msg
 import std_msgs.msg
 
@@ -42,4 +41,3 @@ if __name__=='__main__':
     controler()
 
 
-    dsllsklk

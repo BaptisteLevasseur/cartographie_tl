@@ -1,0 +1,15 @@
+<launch>
+
+<!-- Il faut d'abord avoir lancé la scène vrep et démarré la simulation -->
+<group ns="robot">
+  <node pkg="cartographie_tl" name="controler" type="controler.py"/>
+  <node pkg="rviz" name="rviz" type="rviz"/>
+  <node pkg="gmapping" name="slam_gmapping" type="slam_gmapping">
+   <remap from="scan" to="vrep/front_scan"/>
+   <remap from="base_frame" to="Pioneer_p3dx"/>
+   <remap from="odom_frame" to="odom"/>
+   <remap from="tf" to="tf"/>
+  </node>
+</group>
+
+</launch>
