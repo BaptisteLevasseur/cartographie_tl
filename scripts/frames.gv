@@ -1,0 +1,7 @@
+digraph G {
+"Pioneer_p3dx" -> "Pioneer_p3dx/leftMotor"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
+"odom" -> "Pioneer_p3dx"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
+"Pioneer_p3dx" -> "Pioneer_p3dx/rightMotor"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
+"Pioneer_p3dx" -> "Pioneer_p3dx/camera"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
+"Pioneer_p3dx" -> "Hokuyo_URG_04LX_UG01_ROS"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
+}
