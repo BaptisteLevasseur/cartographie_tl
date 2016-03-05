@@ -1,7 +1,7 @@
 digraph G {
-"Pioneer_p3dx" -> "Pioneer_p3dx/leftMotor"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
-"odom" -> "Pioneer_p3dx"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
-"Pioneer_p3dx" -> "Pioneer_p3dx/rightMotor"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
-"Pioneer_p3dx" -> "Pioneer_p3dx/camera"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
-"Pioneer_p3dx" -> "Hokuyo_URG_04LX_UG01_ROS"[label="Broadcaster: /vrep\nAverage rate: 7.274 Hz\nMost recent transform: 1456620527.532 \nBuffer length: 4.949 sec\n"];
+"map" -> "odom"[label="Broadcaster: /robot/slam_gmapping\nAverage rate: 20.202 Hz\nMost recent transform: 1456845654.250 ( -0.010 sec old)\nBuffer length: 4.950 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1456845654.240"[ shape=plaintext ] ;
+ }->"map";
 }
