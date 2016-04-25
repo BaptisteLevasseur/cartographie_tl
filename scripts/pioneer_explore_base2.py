@@ -183,21 +183,48 @@ for i in range(-3,4):
 for i in range(10):
   image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
 
+def is_free(x,y):
+    for k in range(-1,2):
+        for l in range(-1,2): # On regarde les cellules adjacentes
+            if(k != 0 or l != 0):
+                if(data[(x+k)*width+(y+l)] == -1):  # Si une de ces cellules adjacentes est inconnue
+                    image_array[x,y,0] = 30
+                    image_array[x,y,1] = 250
+                    image_array[x,y,2] = 10
+                    return True
+
 def find_free_pix():
     for i in range(height):
         for j in range(width):  # On parcours la carte
             if(data[i*width+j] == 0): # Si on se retrouve sur un pixel "libre" (free)
-                for k in range(-1,2):
-                    for l in range(-1,2): # On regarde les cellules adjacentes
-                        if(k != 0 or l != 0):
-                            if(data[(i+k)*width+(j+l)] == -1):  # Si une de ces cellules adjacentes est inconnue
-                                image_array[i,j,0] = 30
-                                image_array[i,j,1] = 250
-                                image_array[i,j,2] = 10
-#                                return (i, j)
-find_free_pix()
-#(x_im,y_im)=find_free_pix()
-#(x,y,z)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
-#reach_goal(x,y,0)
+                if(is_free(i,j)):
+                    return (i, j)
+def find_ppv():
+    rayon=4
+    x_robot=pose_in_im[1]
+    y_robot=pose_in_im[0]
+    while abs(rayon+x_robot)< width and abs(rayon+y_robot) < height:
+        for i in range(-rayon,rayon+1):
+            if(i == -rayon or i==rayon):
+               for j in range(-rayon,rayon+1):
+                   if(is_free(x_robot+i,y_robot+j)):
+                       print("Trouv")
+                       return (x_robot+i,y_robot+j)
+            else:
+                if(is_free(x_robot+i,y_robot+rayon)):
+                   print("Trouv1")
+                   return (x_robot+i,y_robot+rayon)
+                if(is_free(x_robot+i,y_robot-rayon)):
+                   print("Trouv2")
+                   return (x_robot+i,y_robot-rayon)
+        rayon = rayon+1
+
+
+
+
+
+(x_im,y_im)=find_ppv()
+(x,y,z)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
+# reach_goal(x,y,0)
 
 scipy.misc.imsave('map.png', image_array)
