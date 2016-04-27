@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 
 # This node communicates with the actionlib server of move_base
 # by sending it goals as a Pose in the /map frame
@@ -64,19 +65,19 @@ def reach_goal(x, y, theta):
 
 
 # First goal : turn around to scan the surroundings
-t0 = rospy.Time(0)
-listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
-((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
-euler = tf.transformations.euler_from_quaternion(rot)
-reach_goal(x, y, euler[2] + pi)
-print("G0 done")
+#t0 = rospy.Time(0)
+#listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+#((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
+#euler = tf.transformations.euler_from_quaternion(rot)
+#reach_goal(x, y, euler[2] + pi)
+#print("G0 done")
 
-t0 = rospy.Time(0)
-listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
-((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
-euler = tf.transformations.euler_from_quaternion(rot)
-reach_goal(x, y, euler[2] + pi)
-print("G1 done")
+#t0 = rospy.Time(0)
+#listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+#((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
+#euler = tf.transformations.euler_from_quaternion(rot)
+#reach_goal(x, y, euler[2] + pi)
+#print("G1 done")
 
 
 ###### We now look for places to go....
@@ -216,7 +217,7 @@ def find_ppv(): #Cherche le plus proche voisin libre
     x_robot=pose_in_im[1]
     y_robot=pose_in_im[0]
     while abs(rayon+x_robot)< width and abs(rayon+y_robot) < height:
-        for i in range(-rayon,rayon+1): #Parcours la carte en partant de la position initiale du robot en faisant des carr
+        for i in range(-rayon,rayon+1): #Parcourt la carte en partant de la position initiale du robot en faisant des carr
             if(i == -rayon or i==rayon): #Si on est sur un bord de gauche ou de droite
                 for j in range(-rayon,rayon+1):
                     if(is_free(x_robot+i,y_robot+j)):
@@ -235,7 +236,8 @@ def find_ppv(): #Cherche le plus proche voisin libre
 
 
 (x_im,y_im)=find_ppv()
-(x,y,z)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
-reach_goal(x,y,0)
+(x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
+print(y,x,theta) 
 
 scipy.misc.imsave('map.png', image_array)
+reach_goal(y,x,theta) # MAIS POURQUOI PAS (x,y,theta) ???§§§????
