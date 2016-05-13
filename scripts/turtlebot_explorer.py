@@ -263,27 +263,28 @@ def find_ppv(): #Cherche le plus proche voisin libre
 #(x_im,y_im)=find_ppv()
 #(x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
 #print(y,x,theta)
-remplissage_diff()
+#remplissage_diff()
+#
+#(x_im,y_im)=find_ppv()
+#
+#image_array[x_im,y_im,0] = 255
+#image_array[x_im,y_im,1] = 20
+#image_array[x_im,y_im,2] = 250 
+#(x_g,y_g,theta_g)=pix_to_pose((x_im,y_im,0),pose_origin,metadata)
+#
+#
+## Plotting the location of the robot
+#for i in range(-3,4):
+#  for j in range(-3,4):
+#    image_array[pose_in_im[1]+i, pose_in_im[0]+j] = (255, 0, 0)
+## Plotting its orientation
+#for i in range(10):
+#  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
+#
+#
+#print("Enregistrement de l'image")
+#
 
-(x_im,y_im)=find_ppv()
-
-image_array[x_im,y_im,0] = 255
-image_array[x_im,y_im,1] = 20
-image_array[x_im,y_im,2] = 250 
-(x_g,y_g,theta_g)=pix_to_pose((x_im,y_im,0),pose_origin,metadata)
-
-
-# Plotting the location of the robot
-for i in range(-3,4):
-  for j in range(-3,4):
-    image_array[pose_in_im[1]+i, pose_in_im[0]+j] = (255, 0, 0)
-# Plotting its orientation
-for i in range(10):
-  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
-
-
-print("Enregistrement de l'image")
 
 scipy.misc.imsave('map.png', image_array)
-print(x_g,y_g,theta_g)
-#reach_goal(x_g,y_g,theta_g) # MAIS POURQUOI PAS (x,y,theta) ???§§§????
+reach_goal(1,0,0) # MAIS POURQUOI PAS (x,y,theta) ???§§§????

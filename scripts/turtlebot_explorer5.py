@@ -52,6 +52,7 @@ def reach_goal(x, y, theta):
   goal.target_pose.pose.orientation.y = target_quat[1]
   goal.target_pose.pose.orientation.z = target_quat[2]
   goal.target_pose.pose.orientation.w = target_quat[3]
+  print(str(goal))
 
   # Sends the goal to the action server.
   client.send_goal(goal)
@@ -93,15 +94,13 @@ def pose_to_pix(pose_robot, pose_origin, metadata):
   w = metadata[0]
   h = metadata[1]
   res = metadata[2]
-  print(w,h)
   # We first convert pose_robot from the "map" frame to the image frame
   x_robot, y_robot,theta_robot = pose_robot
   x_origin, y_origin, theta_origin= pose_origin
   tempx=x_origin+x_robot
   tempy=y_origin+x_robot
-  print(tempx,tempy)  
-  xr_in_im = -(y_origin + y_robot) / res
-  yr_in_im = (x_origin + x_robot) / res + w
+  xr_in_im = (y_origin - y_robot) / res + h
+  yr_in_im = (x_robot -  x_origin) / res  
 #  ###### For the position
 #  # The translation and scaling
 #  xr_in_im = (x_robot - x_origin)/res * cos(-theta_origin)-(y_robot - y_origin)/res * sin(-theta_origin)
@@ -118,8 +117,8 @@ def pix_to_pose(pose_robot_in_im, pose_origin, metadata):
   x_robot_in_im, y_robot_in_im,theta_robot_in_im = pose_robot_in_im
   x_origin, y_origin, theta_origin= pose_origin
 
-  x_robot = x_robot_in_im*res*cos(theta_origin) - y_robot_in_im*res*sin(theta_origin) + x_origin
-  y_robot = x_robot_in_im*res*sin(theta_origin) + y_robot_in_im*res*cos(theta_origin) + y_origin
+  x_robot= y_robot_in_im * res  + x_origin
+  y_robot= -((x_robot_in_im - h) * res - y_origin)
   theta_robot = theta_robot_in_im + theta_origin
   return (x_robot, y_robot, theta_robot)
 
@@ -190,19 +189,10 @@ for i in range(height):
       image_array[i,j,1] = 0
       image_array[i,j,2] = 0
 
-# Plotting the location of the robot
-for i in range(-3,4):
-  for j in range(-3,4):
-    image_array[pose_in_im[1]+i, pose_in_im[0]+j] = (255, 0, 0)
-    copyData[(pose_in_im[1]+i)*width+(pose_in_im[0]+j)]=0
-# Plotting its orientation
-for i in range(10):
-  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
-
 # Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
 def is_free(x,y):
     free=True
-    rayon_inflate=5
+    rayon_inflate=7
     if(copyData[x*width+y]==-2):
         for k in range(-1,2):
             for l in range(-1,2): # On regarde les cellules adjacentes
@@ -220,7 +210,7 @@ def is_free(x,y):
 # /!\ Il faudra étudier s'il est vraiment nécessaire de recréer un vecteur "copyData" => Apparemment on ne peut pas modifier data avec des valeurs interdites.
 # Retourne "True" si le pixel (x,y) est accessible par le robot (situé à un rayon donné des murs)
 def is_accessible(x,y): #Renvoie True si l'on n'est pas près d'un mur
-    rayon_inflate=8
+    rayon_inflate=7
     if(copyData[x*width+y]==0):
         for m in range(-rayon_inflate,rayon_inflate+1): #On regarde si l'on n'est pas près d'un mur (costmap)
             for n in range(-rayon_inflate,rayon_inflate+1):
@@ -277,26 +267,19 @@ image_array[200,0]=(50,50,50)
 scipy.misc.imsave('map.png', image_array)
 (x_im,y_im)=find_ppv()
 (x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
-print(y,x,theta)
-#
-#(x_im,y_im)=find_ppv()
-#
-#image_array[x_im,y_im,0] = 255
-#image_array[x_im,y_im,1] = 20
-#image_array[x_im,y_im,2] = 250 
-#(x_g,y_g,theta_g)=pix_to_pose((x_im,y_im,0),pose_origin,metadata)
-#
-#
+print(x,y,theta)
+
+
+
 # Plotting the location of the robot
 for i in range(-3,4):
   for j in range(-3,4):
     image_array[pose_in_im[0]+i, pose_in_im[1]+j] = (255, 0, 0)
 # Plotting its orientation
 for i in range(10):
-  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
+  image_array[int(pose_in_im[0]+i*sin(-pose_in_im[2])), int(pose_in_im[1]+i*cos(-pose_in_im[2]))] = (0, 0, 255)
 
 
 print("Enregistrement de l'image")
 
-#print(x_g,y_g,theta_g)
-#reach_goal(x_g,y_g,theta_g) # MAIS POURQUOI PAS (x,y,theta) ???§§§????
+reach_goal(x,y,theta) 

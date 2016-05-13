@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
-
-# This node communicates with the actionlib server of move_base
 # by sending it goals as a Pose in the /map frame
 
 # http://wiki.ros.org/actionlib_tutorials/Tutorials/Writing%20a%20Simple%20Action%20Client%20(Python)
@@ -46,45 +43,44 @@ def reach_goal(x, y, theta):
   goal.target_pose.header.seq=goal_number
   goal.target_pose.header.stamp=t0
   goal.target_pose.header.frame_id=target_frame
-
+  
   goal.target_pose.pose.position = Point(x, y, 0)
   goal.target_pose.pose.orientation.x = target_quat[0]
   goal.target_pose.pose.orientation.y = target_quat[1]
   goal.target_pose.pose.orientation.z = target_quat[2]
-  goal.target_pose.pose.orientation.w = target_quat[3]
+  goal.target_pose.pose.orientation.w = target_quat[3]  
 
   # Sends the goal to the action server.
   client.send_goal(goal)
-
+  
   # Waits for the server to finish performing the action.
   client.wait_for_result()
-  print(client.get_result())
-
+  
   # Prints out the result of executing the action
   return client.get_result()
 
 
+  
+####### First goal : turn around to scan the surroundings
+# t0 = rospy.Time(0)
+# listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+# ((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
+# euler = tf.transformations.euler_from_quaternion(rot)
+# reach_goal(x, y, euler[2] + pi)
+# print("G0 done")
 
-# First goal : turn around to scan the surroundings
-#t0 = rospy.Time(0)
-#listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
-#((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
-#euler = tf.transformations.euler_from_quaternion(rot)
-#reach_goal(x, y, euler[2] + pi)
-#print("G0 done")
-
-#t0 = rospy.Time(0)
-#listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
-#((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
-#euler = tf.transformations.euler_from_quaternion(rot)
-#reach_goal(x, y, euler[2] + pi)
-#print("G1 done")
+# t0 = rospy.Time(0)
+# listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+# ((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
+# euler = tf.transformations.euler_from_quaternion(rot)
+# reach_goal(x, y, euler[2] + pi)
+# print("G1 done")
 
 
 ###### We now look for places to go....
 # The map is accessed by calling the service dynamic_map()
 get_map = rospy.ServiceProxy('dynamic_map', GetMap)
-
+ 
 
 # Some useful functions for converting a position in the world in the
 # map frame into its coordinates in the "map", i.e. in the image
@@ -111,7 +107,7 @@ def pix_to_pose(pose_robot_in_im, pose_origin, metadata):
   res = metadata[2]
   # We first convert pose_robot from the "map" frame to the image frame
   x_robot_in_im, y_robot_in_im,theta_robot_in_im = pose_robot_in_im
-  x_origin, y_origin, theta_origin= pose_origin
+  x_origin, y_origin, theta_origin= pose_origin  
 
   x_robot = x_robot_in_im*res*cos(theta_origin) - y_robot_in_im*res*sin(theta_origin) + x_origin
   y_robot = x_robot_in_im*res*sin(theta_origin) + y_robot_in_im*res*cos(theta_origin) + y_origin
@@ -132,13 +128,11 @@ res = m.info.resolution
 origin = m.info.origin
 data = m.data
 metadata = (width, height, res)
+
 x_origin = origin.position.x
 y_origin = origin.position.y
 theta_origin =  (tf.transformations.euler_from_quaternion((origin.orientation.x, origin.orientation.y, origin.orientation.z, origin.orientation.w)))[2]
 pose_origin = (x_origin, y_origin, theta_origin)
-
-
-copyData=list(data)
 
 # we also need to know where we are
 t0 = rospy.Time(0)
@@ -166,118 +160,26 @@ image_array = np.zeros((height, width,3), dtype=int)
 # Plotting the map
 for i in range(height):
   for j in range(width):
-    if(data[j*height+i] == -1): # Unknown
+    if(data[i*width+j] == -1): # Unknown
       image_array[i,j,0] = 255
       image_array[i,j,1] = 255
       image_array[i,j,2] = 255
-    elif(data[j*height+i] == 0): # Free
+    elif(data[i*width+j] == 0): # Free
       image_array[i,j,0] = 125
       image_array[i,j,1] = 125
       image_array[i,j,2] = 125
-    elif(data[j*height+i] == 100): # Walls
+    elif(data[i*width+j] == 100): # Walls
       image_array[i,j,0] = 0
       image_array[i,j,1] = 0
       image_array[i,j,2] = 0
-print(height,width)
-
+      
 # Plotting the location of the robot
 for i in range(-3,4):
   for j in range(-3,4):
-    image_array[pose_in_im[0]+i, pose_in_im[1]+j] = (255, 0, 0)
-    copyData[(pose_in_im[0]+i)*height+(pose_in_im[1]+j)]=0
+    image_array[pose_in_im[1]+i, pose_in_im[0]+j] = (255, 0, 0)
 # Plotting its orientation
 for i in range(10):
-  image_array[int(pose_in_im[0]+i*cos(pose_in_im[2])), int(pose_in_im[1]+i*sin(pose_in_im[2]))] = (0, 0, 255)
+  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
 
-# Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
-def is_free(x,y):
-    free=True
-    rayon_inflate=8
-    if(copyData[y*height+x]==-2):
-        for k in range(-1,2):
-            for l in range(-1,2): # On regarde les cellules adjacentes
-                if(k != 0 or l != 0):
-                    if(data[(y+k)*height+(x+l)] == -1):  # Si une de ces cellules adjacentes est inconnue
-                        print("Bordure trouvée")
-                        image_array[x,y,0] = 255
-                        image_array[x,y,1] = 20
-                        image_array[x,y,2] = 147
-                        return True
-    else:
-        return False
-
-
-# /!\ Il faudra étudier s'il est vraiment nécessaire de recréer un vecteur "copyData" => Apparemment on ne peut pas modifier data avec des valeurs interdites.
-# Retourne "True" si le pixel (x,y) est accessible par le robot (situé à un rayon donné des murs)
-def is_accessible(x,y): #Renvoie True si l'on n'est pas près d'un mur
-    rayon_inflate=5
-    if(copyData[y*height+x]==0):
-        for m in range(-rayon_inflate,rayon_inflate+1): #On regarde si l'on n'est pas près d'un mur (costmap)
-            for n in range(-rayon_inflate,rayon_inflate+1):
-                if(copyData[(y+m)*height+(x+n)]==100):
-                    return False
-        return True
-    return False
-
-def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l'espacement des murs
-    pile=[]
-    x_robot=pose_in_im[0] #Position du robot
-    y_robot=pose_in_im[1]
-    if not is_accessible(x_robot,y_robot): #Si il y un mur autour de ce pixel
-        return
-    pile.append([x_robot,y_robot])
-    print("Analyse des zones accessibles")
-    while pile != []:
-        [x,y]=pile.pop()
-        image_array[x,y,0] = 30
-        image_array[x,y,1] =250
-        image_array[x,y,2] = 10
-        copyData[y*height+x]=-2 #La valeur arbitraire "-2" correspond à une zone accessible pour le robot
-        for k in range(-1,2):
-            for l in range(-1,2): #Pour chaque pixels adjacents au pixel actuel, on regarde si la zone est accessible
-                if(k !=0 or l !=0):
-                    if is_accessible(x+k,y+l):
-                        pile.append([x+k,y+l])
-    print("Analyse terminée")
-    return
-
-
-def find_ppv(): #Cherche le plus proche voisin libre 
-    rayon=5
-    x_robot=pose_in_im[0]
-    y_robot=pose_in_im[1]
-    print("Recherche du plus proche voisin")
-    while abs(rayon+x_robot)< width and abs(rayon+y_robot) < height:
-        for i in range(-rayon,rayon+1): #Parcourt la carte en partant de la position initiale du robot en faisant des carr
-            if(i == -rayon or i==rayon): #Si on est sur un bord de gauche ou de droite
-                for j in range(-rayon,rayon+1):
-                    if(is_free(x_robot+i,y_robot+j)):
-                        return (x_robot+i,y_robot+j)
-            else:
-                if(is_free(x_robot+i,y_robot+rayon)):
-                    return (x_robot+i,y_robot+rayon)
-                if(is_free(x_robot+i,y_robot-rayon)):
-                    return (x_robot+i,y_robot-rayon)
-        rayon = rayon+1
-
-
-
-#(x_im,y_im)=find_ppv()
-#(x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
-#print(y,x,theta)
-#remplissage_diff()
-#(x_im,y_im)=find_ppv()
-#(x,y,theta)=pix_to_pose((x_im,y_im,0),pose_origin,metadata)
-
-# Plotting the location of the robot
-for i in range(-3,4):
-  for j in range(-3,4):
-    image_array[pose_in_im[0]+i, pose_in_im[1]+j] = (255, 0, 0)
-# Plotting its orientation
-for i in range(10):
-  image_array[int(pose_in_im[0]+i*cos(pose_in_im[2])), int(pose_in_im[1]+i*sin(pose_in_im[2]))] = (0, 0, 255)
-
-#print(x,y)
-#print("Enregistrement de l'image")
 scipy.misc.imsave('map.png', image_array)
-reach_goal(1,0,0) # MAIS POURQUOI PAS (x,y,theta) ???§§§????
+reach_goal(1,0,0)
