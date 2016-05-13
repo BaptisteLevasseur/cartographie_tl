@@ -1,9 +1,0 @@
-global_costmap:
-  global_frame: /map
-  robot_base_frame: Pioneer_p3dx
-  static_map: false
-  origin_x: -10
-  origin_y: -10
-  width: 20
-  height: 20
-  resolution: 0.05
