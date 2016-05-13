@@ -35,7 +35,7 @@ listener = tf.TransformListener()
 
 goal_number=0
 target_frame='map'
-base_link='Pioneer_p3dx'
+base_link='base_link'
 
 
 def reach_goal(x, y, theta):
@@ -58,7 +58,7 @@ def reach_goal(x, y, theta):
 
   # Waits for the server to finish performing the action.
   client.wait_for_result()
-  print(client.get_result)
+  print(client.get_result())
 
   # Prints out the result of executing the action
   return client.get_result()
@@ -125,8 +125,7 @@ def pix_to_pose(pose_robot_in_im, pose_origin, metadata):
 
 # Request the map as well as the metadata
 m = get_map().map
-
-width = m.info.width
+width=m.info.width
 height = m.info.height
 res = m.info.resolution
 origin = m.info.origin
@@ -164,21 +163,41 @@ print("From which we compute the pose in map :" + str(pose_in_map))
 image_array = np.zeros((height, width,3), dtype=int)
 
 # Plotting the map
+#for i in range(height):
+#  for j in range(width):
+#    if(data[i*width+j] == -1): # Unknown
+#      image_array[i,j,0] = 255
+#      image_array[i,j,1] = 255
+#      image_array[i,j,2] = 255
+#    elif(data[i*width+j] == 0): # Free
+#      image_array[i,j,0] = 125
+#      image_array[i,j,1] = 125
+#      image_array[i,j,2] = 125
+#    elif(data[i*width+j] == 100): # Walls
+#      image_array[i,j,0] = 0
+#      image_array[i,j,1] = 0
+#      image_array[i,j,2] = 0
+
+dataSame=np.asarray(data)
+data2=dataSame.reshape((height),-(width))
+
+print(data2.shape)
 for i in range(height):
   for j in range(width):
-    if(data[i*width+j] == -1): # Unknown
+    if(data2[height-1-i,j] == -1): # Unknown
       image_array[i,j,0] = 255
       image_array[i,j,1] = 255
       image_array[i,j,2] = 255
-    elif(data[i*width+j] == 0): # Free
+    elif(data2[height-1-i,j] == 0): # Free
       image_array[i,j,0] = 125
       image_array[i,j,1] = 125
       image_array[i,j,2] = 125
-    elif(data[i*width+j] == 100): # Walls
+    elif(data2[height-1-i,j] == 100): # Walls
       image_array[i,j,0] = 0
       image_array[i,j,1] = 0
       image_array[i,j,2] = 0
 
+scipy.misc.imsave('map.png', image_array)
 # Plotting the location of the robot
 for i in range(-3,4):
   for j in range(-3,4):
@@ -191,16 +210,16 @@ for i in range(10):
 # Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
 def is_free(x,y):
     free=True
-    rayon_inflate=8
+    rayon_inflate=5
     if(copyData[x*width+y]==-2):
         for k in range(-1,2):
             for l in range(-1,2): # On regarde les cellules adjacentes
                 if(k != 0 or l != 0):
                     if(data[(x+k)*width+(y+l)] == -1):  # Si une de ces cellules adjacentes est inconnue
                         print("Bordure trouvée")
-                        image_array[x,y,0] = 255
-                        image_array[x,y,1] = 20
-                        image_array[x,y,2] = 147
+#                        image_array[x,y,0] = 255
+#                        image_array[x,y,1] = 20
+#                        image_array[x,y,2] = 147
                         return True
     else:
         return False
@@ -209,7 +228,7 @@ def is_free(x,y):
 # /!\ Il faudra étudier s'il est vraiment nécessaire de recréer un vecteur "copyData" => Apparemment on ne peut pas modifier data avec des valeurs interdites.
 # Retourne "True" si le pixel (x,y) est accessible par le robot (situé à un rayon donné des murs)
 def is_accessible(x,y): #Renvoie True si l'on n'est pas près d'un mur
-    rayon_inflate=3
+    rayon_inflate=8
     if(copyData[x*width+y]==0):
         for m in range(-rayon_inflate,rayon_inflate+1): #On regarde si l'on n'est pas près d'un mur (costmap)
             for n in range(-rayon_inflate,rayon_inflate+1):
@@ -242,7 +261,7 @@ def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l
 
 
 def find_ppv(): #Cherche le plus proche voisin libre 
-    rayon=5
+    rayon=20
     x_robot=pose_in_im[1]
     y_robot=pose_in_im[0]
     print("Recherche du plus proche voisin")
@@ -265,7 +284,26 @@ def find_ppv(): #Cherche le plus proche voisin libre
 #(x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
 #print(y,x,theta)
 remplissage_diff()
-find_ppv()
+
+(x_im,y_im)=find_ppv()
+
+image_array[x_im,y_im,0] = 255
+image_array[x_im,y_im,1] = 20
+image_array[x_im,y_im,2] = 250 
+(x_g,y_g,theta_g)=pix_to_pose((x_im,y_im,0),pose_origin,metadata)
+
+
+# Plotting the location of the robot
+for i in range(-3,4):
+  for j in range(-3,4):
+    image_array[pose_in_im[1]+i, pose_in_im[0]+j] = (255, 0, 0)
+# Plotting its orientation
+for i in range(10):
+  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
+
+
 print("Enregistrement de l'image")
+
 scipy.misc.imsave('map.png', image_array)
-#reach_goal(x,y,theta) # MAIS POURQUOI PAS (x,y,theta) ???§§§????
+print(x_g,y_g,theta_g)
+#reach_goal(x_g,y_g,theta_g) # MAIS POURQUOI PAS (x,y,theta) ???§§§????

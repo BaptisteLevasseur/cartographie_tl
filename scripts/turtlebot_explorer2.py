@@ -35,7 +35,7 @@ listener = tf.TransformListener()
 
 goal_number=0
 target_frame='map'
-base_link='Pioneer_p3dx'
+base_link='base_link'
 
 
 def reach_goal(x, y, theta):
@@ -58,7 +58,7 @@ def reach_goal(x, y, theta):
 
   # Waits for the server to finish performing the action.
   client.wait_for_result()
-  print(client.get_result)
+  print(client.get_result())
 
   # Prints out the result of executing the action
   return client.get_result()
@@ -166,37 +166,38 @@ image_array = np.zeros((height, width,3), dtype=int)
 # Plotting the map
 for i in range(height):
   for j in range(width):
-    if(data[i*width+j] == -1): # Unknown
+    if(data[j*height+i] == -1): # Unknown
       image_array[i,j,0] = 255
       image_array[i,j,1] = 255
       image_array[i,j,2] = 255
-    elif(data[i*width+j] == 0): # Free
+    elif(data[j*height+i] == 0): # Free
       image_array[i,j,0] = 125
       image_array[i,j,1] = 125
       image_array[i,j,2] = 125
-    elif(data[i*width+j] == 100): # Walls
+    elif(data[j*height+i] == 100): # Walls
       image_array[i,j,0] = 0
       image_array[i,j,1] = 0
       image_array[i,j,2] = 0
+print(height,width)
 
 # Plotting the location of the robot
 for i in range(-3,4):
   for j in range(-3,4):
-    image_array[pose_in_im[1]+i, pose_in_im[0]+j] = (255, 0, 0)
-    copyData[(pose_in_im[1]+i)*width+(pose_in_im[0]+j)]=0
+    image_array[pose_in_im[0]+i, pose_in_im[1]+j] = (255, 0, 0)
+    copyData[(pose_in_im[0]+i)*height+(pose_in_im[1]+j)]=0
 # Plotting its orientation
 for i in range(10):
-  image_array[int(pose_in_im[1]+i*sin(pose_in_im[2])), int(pose_in_im[0]+i*cos(pose_in_im[2]))] = (0, 0, 255)
+  image_array[int(pose_in_im[0]+i*cos(pose_in_im[2])), int(pose_in_im[1]+i*sin(pose_in_im[2]))] = (0, 0, 255)
 
 # Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
 def is_free(x,y):
     free=True
     rayon_inflate=8
-    if(copyData[x*width+y]==-2):
+    if(copyData[y*height+x]==-2):
         for k in range(-1,2):
             for l in range(-1,2): # On regarde les cellules adjacentes
                 if(k != 0 or l != 0):
-                    if(data[(x+k)*width+(y+l)] == -1):  # Si une de ces cellules adjacentes est inconnue
+                    if(data[(y+k)*height+(x+l)] == -1):  # Si une de ces cellules adjacentes est inconnue
                         print("Bordure trouvée")
                         image_array[x,y,0] = 255
                         image_array[x,y,1] = 20
@@ -209,19 +210,19 @@ def is_free(x,y):
 # /!\ Il faudra étudier s'il est vraiment nécessaire de recréer un vecteur "copyData" => Apparemment on ne peut pas modifier data avec des valeurs interdites.
 # Retourne "True" si le pixel (x,y) est accessible par le robot (situé à un rayon donné des murs)
 def is_accessible(x,y): #Renvoie True si l'on n'est pas près d'un mur
-    rayon_inflate=3
-    if(copyData[x*width+y]==0):
+    rayon_inflate=5
+    if(copyData[y*height+x]==0):
         for m in range(-rayon_inflate,rayon_inflate+1): #On regarde si l'on n'est pas près d'un mur (costmap)
             for n in range(-rayon_inflate,rayon_inflate+1):
-                if(copyData[(x+m)*width+(y+n)]==100):
+                if(copyData[(y+m)*height+(x+n)]==100):
                     return False
         return True
     return False
 
 def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l'espacement des murs
     pile=[]
-    x_robot=pose_in_im[1] #Position du robot
-    y_robot=pose_in_im[0]
+    x_robot=pose_in_im[0] #Position du robot
+    y_robot=pose_in_im[1]
     if not is_accessible(x_robot,y_robot): #Si il y un mur autour de ce pixel
         return
     pile.append([x_robot,y_robot])
@@ -231,7 +232,7 @@ def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l
         image_array[x,y,0] = 30
         image_array[x,y,1] =250
         image_array[x,y,2] = 10
-        copyData[x*width+y]=-2 #La valeur arbitraire "-2" correspond à une zone accessible pour le robot
+        copyData[y*height+x]=-2 #La valeur arbitraire "-2" correspond à une zone accessible pour le robot
         for k in range(-1,2):
             for l in range(-1,2): #Pour chaque pixels adjacents au pixel actuel, on regarde si la zone est accessible
                 if(k !=0 or l !=0):
@@ -243,8 +244,8 @@ def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l
 
 def find_ppv(): #Cherche le plus proche voisin libre 
     rayon=5
-    x_robot=pose_in_im[1]
-    y_robot=pose_in_im[0]
+    x_robot=pose_in_im[0]
+    y_robot=pose_in_im[1]
     print("Recherche du plus proche voisin")
     while abs(rayon+x_robot)< width and abs(rayon+y_robot) < height:
         for i in range(-rayon,rayon+1): #Parcourt la carte en partant de la position initiale du robot en faisant des carr
@@ -264,8 +265,19 @@ def find_ppv(): #Cherche le plus proche voisin libre
 #(x_im,y_im)=find_ppv()
 #(x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
 #print(y,x,theta)
-remplissage_diff()
-find_ppv()
-print("Enregistrement de l'image")
+#remplissage_diff()
+#(x_im,y_im)=find_ppv()
+#(x,y,theta)=pix_to_pose((x_im,y_im,0),pose_origin,metadata)
+
+# Plotting the location of the robot
+for i in range(-3,4):
+  for j in range(-3,4):
+    image_array[pose_in_im[0]+i, pose_in_im[1]+j] = (255, 0, 0)
+# Plotting its orientation
+for i in range(10):
+  image_array[int(pose_in_im[0]+i*cos(pose_in_im[2])), int(pose_in_im[1]+i*sin(pose_in_im[2]))] = (0, 0, 255)
+
+#print(x,y)
+#print("Enregistrement de l'image")
 scipy.misc.imsave('map.png', image_array)
 #reach_goal(x,y,theta) # MAIS POURQUOI PAS (x,y,theta) ???§§§????

@@ -194,6 +194,7 @@ def find_free_pix():
                                 image_array[i,j,0] = 30
                                 image_array[i,j,1] = 250
                                 image_array[i,j,2] = 10
+				print("Coucou")
 #                                return (i, j)
 find_free_pix()
 #(x_im,y_im)=find_free_pix()

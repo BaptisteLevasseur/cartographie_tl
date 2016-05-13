@@ -102,7 +102,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
  LIBRARIES cartographie_tl
  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs move_base
  DEPENDS system_lib
