@@ -192,7 +192,6 @@ for i in range(height):
 # Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
 def is_free(x,y):
     free=True
-    rayon_inflate=7
     if(copyData[x*width+y]==-2):
         for k in range(-1,2):
             for l in range(-1,2): # On regarde les cellules adjacentes
@@ -210,7 +209,7 @@ def is_free(x,y):
 # /!\ Il faudra étudier s'il est vraiment nécessaire de recréer un vecteur "copyData" => Apparemment on ne peut pas modifier data avec des valeurs interdites.
 # Retourne "True" si le pixel (x,y) est accessible par le robot (situé à un rayon donné des murs)
 def is_accessible(x,y): #Renvoie True si l'on n'est pas près d'un mur
-    rayon_inflate=7
+    rayon_inflate=4
     if(copyData[x*width+y]==0):
         for m in range(-rayon_inflate,rayon_inflate+1): #On regarde si l'on n'est pas près d'un mur (costmap)
             for n in range(-rayon_inflate,rayon_inflate+1):
@@ -266,6 +265,7 @@ def find_ppv(): #Cherche le plus proche voisin libre
 
 remplissage_diff()
 image_array[200,0]=(50,50,50)
+scipy.misc.imsave('map.png', image_array)
 (x_im,y_im)=find_ppv()
 (x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
 print(x,y,theta)
