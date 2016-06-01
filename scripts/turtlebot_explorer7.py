@@ -191,7 +191,6 @@ for i in range(height):
 
 # Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
 def is_free(x,y):
-    print(x,y)
     if(copyData[x*width+y]==-2):
         for k in range(-1,2):
             for l in range(-1,2): # On regarde les cellules adjacentes
@@ -252,17 +251,21 @@ def find_ppv(): #Cherche le plus proche voisin libre
         for i in range(-rayon,rayon+1): #Parcourt la carte en partant de la position initiale du robot en faisant des carr
             if(i == -rayon or i==rayon): #Si on est sur un bord de gauche ou de droite
                 for j in range(-rayon,rayon+1):
-                    if(is_free(x_robot+i,y_robot+j)):
-                        return (x_robot+i,y_robot+j)
+                    if(x_robot+i<width and y_robot+j<height):
+                        if(is_free(x_robot+i,y_robot+j)):
+                            return (x_robot+i,y_robot+j)
             else:
-                if(is_free(x_robot+i,y_robot+rayon)):
-                    return (x_robot+i,y_robot+rayon)
-                if(is_free(x_robot+i,y_robot-rayon)):
-                    return (x_robot+i,y_robot-rayon)
+                
+                if(x_robot+i<width and y_robot+j<height):
+                    if(is_free(x_robot+i,y_robot+rayon)):
+                        return (x_robot+i,y_robot+rayon)
+                    if(is_free(x_robot+i,y_robot-rayon)):
+                        return (x_robot+i,y_robot-rayon)
         rayon = rayon + 1
-        print(rayon)
+
 
 remplissage_diff()
+print(width,height)
 image_array[200,0]=(50,50,50)
 scipy.misc.imsave('map.png', image_array)
 (x_im,y_im)=find_ppv()
