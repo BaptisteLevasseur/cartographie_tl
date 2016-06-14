@@ -24,7 +24,6 @@ from math import pi, cos, sin, isnan
 import scipy.misc
 import numpy as np
 
-
 rospy.init_node('explore_client')
 client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
 client.wait_for_server()
@@ -80,11 +79,21 @@ def reach_goal(x, y, theta):
 #euler = tf.transformations.euler_from_quaternion(rot)
 #reach_goal(x, y, euler[2] + pi)
 #print("G1 done")
+def rotate():
+	t0 = rospy.Time(0)
+	listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+	((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
+	euler = tf.transformations.euler_from_quaternion(rot)
+	reach_goal(x, y, euler[2] + pi)
+
+	t0 = rospy.Time(0)
+	listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+	((x,y,z), rot) = listener.lookupTransform('map', base_link, t0)
+	euler = tf.transformations.euler_from_quaternion(rot)
+	reach_goal(x, y, euler[2] + pi)
 
 
 ###### We now look for places to go....
-# The map is accessed by calling the service dynamic_map()
-get_map = rospy.ServiceProxy('dynamic_map', GetMap)
 
 
 # Some useful functions for converting a position in the world in the
@@ -126,71 +135,70 @@ def pix_to_pose(pose_robot_in_im, pose_origin, metadata):
 # We now start the controller and should in principle run the node
 # until no reachable locations remain unknown 
 # (i.e. there will be no unknown places next to a known free place)
+def get_map_data():
+ 	# The map is accessed by calling the service dynamic_map()
+	get_map = rospy.ServiceProxy('dynamic_map', GetMap)
+	# Request the map as well as the metadata
+	m = get_map().map
+	width=m.info.width
+	height = m.info.height
+	res = m.info.resolution
+	origin = m.info.origin
+	data = m.data
+	metadata = (width, height, res)
+	x_origin = origin.position.x
+	y_origin = origin.position.y
+	theta_origin =  (tf.transformations.euler_from_quaternion((origin.orientation.x, origin.orientation.y, origin.orientation.z, origin.orientation.w)))[2]
+	pose_origin = (x_origin, y_origin, theta_origin)
 
-# Request the map as well as the metadata
-m = get_map().map
-width=m.info.width
-height = m.info.height
-res = m.info.resolution
-origin = m.info.origin
-data = m.data
-metadata = (width, height, res)
-x_origin = origin.position.x
-y_origin = origin.position.y
-theta_origin =  (tf.transformations.euler_from_quaternion((origin.orientation.x, origin.orientation.y, origin.orientation.z, origin.orientation.w)))[2]
-pose_origin = (x_origin, y_origin, theta_origin)
-
-
-
-
-# we also need to know where we are
-t0 = rospy.Time(0)
-listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
-((x_robot,y_robot,z), rot) = listener.lookupTransform('map', base_link, t0)
-euler = tf.transformations.euler_from_quaternion(rot)
-theta_robot = euler[2]
-pose_robot = (x_robot, y_robot, theta_robot)
-
-
-# The robot is at (x_robot, y_robot, theta_robot) in the "map" frame
-# The origin is at (x_origin, y_origin, theta_origin) in the "map" frame
-
-# DEMO : we demonstrate how to use pose_to_pix and pix_to_pose
-print("Original pose in map : " + str(pose_robot))
-pose_in_im = pose_to_pix((x_robot, y_robot, theta_robot), pose_origin, metadata)
-print("Pose in the image : " + str(pose_in_im))
-pose_in_map = pix_to_pose(pose_in_im, pose_origin, metadata)
-print("From which we compute the pose in map :" + str(pose_in_map))
+	# we also need to know where we are
+	t0 = rospy.Time(0)
+	listener.waitForTransform('map', base_link, t0, rospy.Duration(1))
+	((x_robot,y_robot,z), rot) = listener.lookupTransform('map', base_link, t0)
+	euler = tf.transformations.euler_from_quaternion(rot)
+	theta_robot = euler[2]
+	pose_robot = (x_robot, y_robot, theta_robot)
 
 
-# DEMO : we generate an image where we plot the map
-# as well as the location and orientation of the robot
-image_array = np.zeros((height, width,3), dtype=int)
+	# The robot is at (x_robot, y_robot, theta_robot) in the "map" frame
+	# The origin is at (x_origin, y_origin, theta_origin) in the "map" frame
+	
+	# DEMO : we demonstrate how to use pose_to_pix and pix_to_pose
+	print("Original pose in map : " + str(pose_robot))
+	pose_in_im = pose_to_pix((x_robot, y_robot, theta_robot), pose_origin, metadata)
+	print("Pose in the image : " + str(pose_in_im))
+	pose_in_map = pix_to_pose(pose_in_im, pose_origin, metadata)
+	print("From which we compute the pose in map :" + str(pose_in_map))
+	
+	# DEMO : we generate an image where we plot the map
+	# as well as the location and orientation of the robot
+	image_array = np.zeros((height, width,3), dtype=int)
 
-
-copyData=list(data)
-for i in range(height):
-  for j in range(width):
-      copyData[i*width+j]=data[(height-1-i)*width+j]
-
-# Plotting the map
-for i in range(height):
-  for j in range(width):
-    if(copyData[i*width+j] == -1): # Unknown
-      image_array[i,j,0] = 255
-      image_array[i,j,1] = 255
-      image_array[i,j,2] = 255
-    elif(copyData[i*width+j] == 0): # Free
-      image_array[i,j,0] = 125
-      image_array[i,j,1] = 125
-      image_array[i,j,2] = 125
-    elif(copyData[i*width+j] == 100): # Walls
-      image_array[i,j,0] = 0
-      image_array[i,j,1] = 0
-      image_array[i,j,2] = 0
+	copyData=list(data)
+	for i in range(height):
+	  for j in range(width):
+	      copyData[i*width+j]=data[(height-1-i)*width+j]
+	
+	# Plotting the map
+	for i in range(height):
+	  for j in range(width):
+	    if(copyData[i*width+j] == -1): # Unknown
+	      image_array[i,j,0] = 255
+	      image_array[i,j,1] = 255
+	      image_array[i,j,2] = 255
+	    elif(copyData[i*width+j] == 0): # Free
+	      image_array[i,j,0] = 125
+	      image_array[i,j,1] = 125
+	      image_array[i,j,2] = 125
+	    elif(copyData[i*width+j] == 100): # Walls
+	      image_array[i,j,0] = 0
+	      image_array[i,j,1] = 0
+	      image_array[i,j,2] = 0
+	return(metadata,pose_origin,pose_robot,pose_in_im,pose_in_map,copyData,image_array)
 
 # Retourne "True" si le pixel (x,y) est adjacent à une bordure et est dans la zone accessible
 def is_free(x,y):
+    width = metadata[0]
     if(copyData[x*width+y]==-2):
         for k in range(-1,2):
             for l in range(-1,2): # On regarde les cellules adjacentes
@@ -209,6 +217,7 @@ def is_free(x,y):
 # Retourne "True" si le pixel (x,y) est accessible par le robot (situé à un rayon donné des murs)
 def is_accessible(x,y): #Renvoie True si l'on n'est pas près d'un mur
     rayon_inflate=4
+    width = metadata[0]
     if(copyData[x*width+y]==0):
         for m in range(-rayon_inflate,rayon_inflate+1): #On regarde si l'on n'est pas près d'un mur (costmap)
             for n in range(-rayon_inflate,rayon_inflate+1):
@@ -229,6 +238,8 @@ def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l
     print("Analyse des zones accessibles")
     while pile != []:
         [x,y]=pile.pop()
+	width = metadata[0]
+	height = metadata[1]
         image_array[x,y,0] = 30
         image_array[x,y,1] =250
         image_array[x,y,2] = 10
@@ -243,9 +254,11 @@ def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l
 
 
 def find_ppv(): #Cherche le plus proche voisin libre 
-    rayon=6
+    rayon=10
     x_robot=pose_in_im[0]
     y_robot=pose_in_im[1]
+    width = metadata[0]
+    height = metadata[1]
     print("Recherche du plus proche voisin")
     while (2*rayon < max(height,width)):
         for i in range(-rayon,rayon+1): #Parcourt la carte en partant de la position initiale du robot en faisant des carr
@@ -264,11 +277,16 @@ def find_ppv(): #Cherche le plus proche voisin libre
         rayon = rayon + 1
     return (float('nan'),float('nan'))
 
-	remplissage_diff()
-#	print(width,height)
-#	image_array[200,0]=(50,50,50)
-	scipy.misc.imsave('map.png', image_array)
-	(x_im,y_im)=find_ppv()
+
+
+
+
+rotate()
+(metadata,pose_origin,pose_robot,pose_in_im,pose_in_map,copyData,image_array)=get_map_data()
+remplissage_diff()
+scipy.misc.imsave('map.png', image_array)
+(x_im,y_im)=find_ppv()
+while(not (isnan(x_im) and isnan(y_im)) and not rospy.is_shutdown() ):
 	(x,y,theta)=pix_to_pose((x_im,y_im,0), pose_origin, metadata)
 	print(x,y,theta)
 	
@@ -284,6 +302,12 @@ def find_ppv(): #Cherche le plus proche voisin libre
 	
 	
 	print("Enregistrement de l'image")
-	
 	scipy.misc.imsave('map.png', image_array)
 	reach_goal(x,y,theta) 
+	rotate()
+	(metadata,pose_origin,pose_robot,pose_in_im,pose_in_map,copyData,image_array)=get_map_data()
+	remplissage_diff()
+	scipy.misc.imsave('map.png', image_array)
+	(x_im,y_im)=find_ppv()
+
+
