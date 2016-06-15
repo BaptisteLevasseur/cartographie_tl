@@ -253,8 +253,7 @@ def remplissage_diff(): #Diffuse la zone d'accessibilité en prenant en compte l
     return
 
 
-def find_ppv(): #Cherche le plus proche voisin libre 
-    rayon=10
+def find_ppv(rayon = 10): #Cherche le plus proche voisin libre 
     x_robot=pose_in_im[0]
     y_robot=pose_in_im[1]
     width = metadata[0]
